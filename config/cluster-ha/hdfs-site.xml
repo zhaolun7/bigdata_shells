@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<configuration>
+    <property>
+        <name>dfs.replication</name>
+        <value>{HDFS_REPLICATION}</value>
+    </property>
+    <!-- 完全分布式集群名称 -->
+    <property>
+        <name>dfs.nameservices</name>
+        <value>{HDFS_HA_CLUSTER}</value>
+    </property>
+    <!-- 集群中NameNode节点都有哪些 -->
+    <property>
+        <name>dfs.ha.namenodes.{HDFS_HA_CLUSTER}</name>
+        <value>nn1,nn2</value>
+    </property>
+    <!-- nn1的RPC通信地址 -->
+    <property>
+        <name>dfs.namenode.rpc-address.{HDFS_HA_CLUSTER}.nn1</name>
+        <value>{HDFS_NAMENODE}:9000</value>
+    </property>
+
+    <!-- nn2的RPC通信地址 -->
+    <property>
+        <name>dfs.namenode.rpc-address.{HDFS_HA_CLUSTER}.nn2</name>
+        <value>{HDFS_HA_NAMENODE_2}:9000</value>
+    </property>
+    
+    <!-- nn1的http通信地址 -->
+    <property>
+        <name>dfs.namenode.http-address.{HDFS_HA_CLUSTER}.nn1</name>
+        <value>{HDFS_NAMENODE}:50070</value>
+    </property>
+
+    <!-- nn2的http通信地址 -->
+    <property>
+        <name>dfs.namenode.http-address.{HDFS_HA_CLUSTER}.nn2</name>
+        <value>{HDFS_HA_NAMENODE_2}:50070</value>
+    </property>
+
+    <!-- 指定NameNode元数据在JournalNode上的存放位置 -->
+    <property>
+        <name>dfs.namenode.shared.edits.dir</name>
+        <value>qjournal://{HDFS_HA_JOURNALNODE}/{HDFS_HA_CLUSTER}</value>
+    </property>
+    <!-- 配置隔离机制，即同一时刻只能有一台服务器对外响应 -->
+    <property>
+        <name>dfs.ha.fencing.methods</name>
+        <value>sshfence</value>
+    </property>
+    <!-- 使用隔离机制时需要ssh无秘钥登录-->
+    <property>
+        <name>dfs.ha.fencing.ssh.private-key-files</name>
+        <value>{USER_HOME}/.ssh/id_rsa</value>
+    </property>
+    <!-- 声明journalnode服务器存储目录-->
+    <property>
+        <name>dfs.journalnode.edits.dir</name>
+        <value>{HADOOP_HOME}/tmp/jn</value>
+    </property>
+    <!-- 关闭权限检查-->
+    <property>
+        <name>dfs.permissions.enable</name>
+        <value>false</value>
+    </property>
+    <!-- 访问代理类：client，mycluster，active配置失败自动切换实现方式-->
+    <property>
+          <name>dfs.client.failover.proxy.provider.{HDFS_HA_CLUSTER}</name>
+    <value>org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.handler.count</name>
+        <value>{HDFS_NAMENODE_HANDELER_COUNT}</value>
+    </property>
+    <property>
+      <name>dfs.datanode.data.dir</name>
+      <value>{HDFS_DATANODE_DATA_DIR}</value>
+    </property>
+    <property>  
+      <name>dfs.datanode.fsdataset.volume.choosing.policy</name>  
+      <value>org.apache.hadoop.hdfs.server.datanode.fsdataset.AvailableSpaceVolumeChoosingPolicy</value>  
+    </property>
+    <!-- 启用自动切换-->
+    <property>
+        <name>dfs.ha.automatic-failover.enabled</name>
+        <value>true</value>
+    </property>
+</configuration>

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<configuration>
+  <property>
+    <name>fs.defaultFS</name>
+    <value>hdfs://{HDFS_NAMENODE}</value>
+  </property>
+  <property>
+    <name>hadoop.tmp.dir</name>
+    <value>{HADOOP_HOME}/tmp</value>
+  </property>
+  <!-- 配置HDFS网页登录使用的静态用户 -->
+  <property>
+    <name>hadoop.http.staticuser.user</name>
+    <value>{USER}</value>
+  </property>
+  <property>
+    <name>hadoop.proxyuser.{USER}.hosts</name>
+    <value>*</value>
+  </property>
+  <property>
+    <name>hadoop.proxyuser.{USER}.groups</name>
+    <value>*</value>
+  </property>
+  <property>
+    <name>hadoop.proxyuser.{USER}.users</name>
+    <value>*</value>
+  </property>
+</configuration>

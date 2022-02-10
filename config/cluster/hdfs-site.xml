@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<configuration>
+    <property>
+        <name>dfs.replication</name>
+        <value>{HDFS_REPLICATION}</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.rpc-address</name>
+        <value>{HDFS_NAMENODE}:9000</value>
+    </property>
+    <property>
+        <name>dfs.namenode.secondary.http-address</name>
+        <value>{HDFS_NAMENODE}:50090</value>
+    </property>
+    <!-- 关闭权限检查-->
+    <property>
+        <name>dfs.permissions.enable</name>
+        <value>false</value>
+    </property>
+    <property>
+        <name>dfs.namenode.handler.count</name>
+        <value>{HDFS_NAMENODE_HANDELER_COUNT}</value>
+    </property>
+    <property>
+      <name>dfs.datanode.data.dir</name>
+      <value>{HDFS_DATANODE_DATA_DIR}</value>
+    </property>
+    <property>  
+      <name>dfs.datanode.fsdataset.volume.choosing.policy</name>  
+      <value>org.apache.hadoop.hdfs.server.datanode.fsdataset.AvailableSpaceVolumeChoosingPolicy</value>  
+    </property>
+
+</configuration>
