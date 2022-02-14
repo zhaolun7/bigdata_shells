@@ -224,14 +224,15 @@ function hadoop_config() {
     rm -rf $tmp_dir
     mkdir $tmp_dir
     if [ "x$HADOOP_HA" == "xtrue" ];then  
-        cp -a ./config/cluster-ha/*.xml $tmp_dir
+        cp -a ./config/hadoop/cluster-ha/*.xml $tmp_dir
     else
-        cp -a ./config/cluster/*.xml $tmp_dir
+        cp -a ./config/hadoop/cluster/*.xml $tmp_dir
     fi
     cd $tmp_dir/
     xml_files=`ls *.xml`
     need_rp_vars=$(grep -e 'HADOOP_' -e 'HDFS_' -e 'YARN_' -e 'USER' $SCRIPT_PATH/fast_install_config.sh |grep -v '#'|cut -d"=" -f1)
-    for var in $need_rp_vars
+    HDFS_NAMENODE_HANDELER_COUNT=`n=$(echo $HDFS_DATANODE | tr ',' '\n' | wc -l);python -c "import math ; num=int(math.log($n) * 20); print(10 if num<10 else num)"`
+    for var in $need_rp_vars HDFS_NAMENODE_HANDELER_COUNT
     do
         for xml_file in $xml_files
         do
@@ -256,7 +257,7 @@ function start_hadoop() {
         done
         sleep 2s
         #format 
-        execute_and_check_order $HDFS_NAMENODE "$HADOOP_HOME/bin/hdfs namenode -format" true
+        execute_and_check_order $HDFS_NAMENODE "$HADOOP_HOME/bin/hdfs namenode -format" false
         execute_and_check_order $HDFS_NAMENODE "$HADOOP_HOME/bin/hdfs zkfc -formatZK" true
         
         execute_and_check_order $HDFS_NAMENODE "$HADOOP_HOME/sbin/hadoop-daemon.sh start namenode" true
@@ -298,7 +299,7 @@ function ssh_login_free_trust() {
         ssh-keygen -t rsa -P '' -f ~/.ssh/id_rsa &>/dev/null
     fi
     cat ~/.ssh/id_rsa.pub
-    " true`
+    " false`
     is_pub "$idpub1"
     if [ "x$HADOOP_HA" == "xtrue" ];then
         ms=$(echo "$HDFS_NAMENODE,$HDFS_DATANODE,$HDFS_HA_NAMENODE_2" | tr ',' '\n' | sort -u)
@@ -311,12 +312,12 @@ function ssh_login_free_trust() {
         execute_and_check_order $HDFS_NAMENODE "ssh -o PasswordAuthentication=no -o StrictHostKeyChecking=no $dn echo ok" true
     done
     if [ "x$HADOOP_HA" == "xtrue" ];then
-        execute_and_check_order=`ssh $HDFS_HA_NAMENODE_2 "
+        idpub2=`execute_and_check_order $HDFS_HA_NAMENODE_2 "
         if [ ! -f ~/.ssh/id_rsa.pub ];then 
             ssh-keygen -t rsa -P '' -f ~/.ssh/id_rsa &>/dev/null
         fi
         cat ~/.ssh/id_rsa.pub
-        "`
+        " false`
         is_pub "$idpub2"
         for dn in $ms
         do
@@ -325,6 +326,150 @@ function ssh_login_free_trust() {
         done
     fi
     LOG "SSH_TRUST OK"
+}
+
+function hive_config() {
+    if [ "x$HIVE_HA" == "xtrue" ];then
+        for m in `echo $HIVE_HA_METASTORE | tr ',' '\n' | sort -u`
+        do
+            HIVE_METASTORE_URIS="$HIVE_METASTORE_URIS,thrift://${METASTORE}:9083"
+            HIVE_METASTORE_URIS=${HIVE_METASTORE_URIS:1}
+        done
+    else
+        METASTORE=`echo $HIVE_NODE | cut -d ',' -f1`
+        HIVE_METASTORE_URIS="thrift://${METASTORE}:9083"
+    fi
+    tmp_dir=$SCRIPT_PATH/tmp_config
+    rm -rf $tmp_dir
+    mkdir $tmp_dir
+    cp -a ./config/hive/*.xml $tmp_dir
+    cd $tmp_dir/
+    xml_files=`ls *.xml`
+    need_rp_vars=$(grep -e 'HIVE_' -e 'USER' $SCRIPT_PATH/fast_install_config.sh |grep -v '#'|cut -d"=" -f1)
+    for var in $need_rp_vars HIVE_METASTORE_URIS
+    do
+        for xml_file in $xml_files
+        do
+            sed -i "s#{$var}#`eval echo '$'"$var"`#g"  $xml_file
+        done
+    done
+    echo "\
+export HIVE_HOME=$HIVE_HOME
+export PATH=\$PATH:\$HIVE_HOME/bin
+"  > hive.sh
+}
+function install_hive() {
+    hive_config
+    cd $SCRIPT_PATH
+    hive_tgz=$(ls apache-hive-2.*-bin.tar.gz | head -1)
+    if [ ! -f $hive_tgz ];then 
+        LOG_ERROR "hadoop install file not find"
+        exit -1
+    fi
+    mysql_jar=$(ls mysql-connector-java-5.*.jar | head -1)
+    if [ ! -f $hive_tgz ];then 
+        LOG_ERROR "hadoop install file not find"
+        exit -1
+    fi
+    if [ "x$HIVE_HA" == "xtrue" ];then
+        ms=$(echo $HIVE_NODE,$HIVE_HA_METASTORE,$HIVE_HA_HIVESERVER2 | tr " " "\n" |tr "," "\n"| grep -v '^$' | sort -u)
+        for m in `echo $HIVE_HA_METASTORE | tr ',' '\n' | sort -u`
+        do
+            HIVE_METASTORE_URIS="$HIVE_METASTORE_URIS,thrift://${METASTORE}:9083"
+            HIVE_METASTORE_URIS=${HIVE_METASTORE_URIS:1}
+        done
+    else
+        ms=$(echo $HIVE_NODE | tr " " "\n" |tr "," "\n"| grep -v '^$' | sort -u)
+        METASTORE=`echo $HIVE_NODE | cut -d ',' -f1`
+        HIVE_METASTORE_URIS="thrift://${METASTORE}:9083"
+    fi
+    LOG "==========START TO DEPLOY=========="
+    for machine in $ms
+    do
+        LOG "$machine start.."
+        cd $SCRIPT_PATH
+        execute_and_check_order $machine "mkdir -p $INSTALL_PATH/"
+        scp -q $hive_tgz $machine:$INSTALL_PATH/$hive_tgz
+        scp -q $mysql_jar $machine:$INSTALL_PATH/$mysql_jar
+        execute_and_check_order $machine "
+            # clean env first
+            rm -rf $HIVE_HOME
+            base_path=\"`dirname $HIVE_HOME`\"
+            mkdir -p \$base_path
+            
+            # unzip file
+            cd $INSTALL_PATH
+            tar --no-same-owner -zxf $hive_tgz -C \$base_path/
+            if [ \$? != 0 ];then
+              echo '$machine tar $hive_tgz failed'
+              exit -1
+            fi
+            rm -rf $INSTALL_PATH/$hive_tgz
+            
+            # rename dir
+            mv \$base_path/${hive_tgz%\.tar\.gz} $HIVE_HOME
+            
+            if [ ! -d \"$HIVE_HOME\" ];then 
+                echo '$machine $HIVE_HOME not exit'
+                exit -1
+            fi
+            mv $INSTALL_PATH/$mysql_jar $HIVE_HOME/lib/
+            mkdir $HIVE_HOME/{tmp,log}
+            $replace_line_func
+            echo 'export JAVA_HOME=$JAVA_HOME
+export HIVE_HOME=$HIVE_HOME
+export HADOOP_HOME=$HADOOP_HOME' >> $HIVE_HOME/conf/hive-env.sh
+            
+            replace_line_func $HIVE_HOME/bin/hive-config.sh 'export HADOOP_HEAPSIZE=' 'export HADOOP_HEAPSIZE=\${HADOOP_HEAPSIZE:-2048}'
+            mv $HIVE_HOME/conf/hive-log4j2.properties.template $HIVE_HOME/conf/hive-log4j2.properties
+            replace_line_func $HIVE_HOME/conf/hive-log4j2.properties 'erty.hive.log.dir' 'property.hive.log.dir = $HIVE_HOME/log/'            
+        " true
+        if [ $? != 0 ];then 
+            LOG_ERROR "$machine DEPLOY FAIL"
+            exit -1
+        else
+            LOG "$machine DEPLOY SUCC"
+        fi
+        scp -q $SCRIPT_PATH/tmp_config/*.xml $machine:$HIVE_HOME/conf/
+        scp -q $SCRIPT_PATH/tmp_config/hive.sh $machine:/etc/profile.d/hive.sh
+    done
+    
+    hive_first_machine=`echo $HIVE_NODE | cut -d ',' -f1`
+    init_mysql
+    
+    #启动
+    if [ "x$HIVE_HA" == "xtrue" ];then
+        for ms in `echo $HIVE_HA_METASTORE | tr ',' '\n' | sort -u`
+        do
+            execute_and_print_order $ms "cd $HIVE_HOME/bin;nohup ./hive --service metastore > ../log/metastore.out 2>&1 &"
+        done
+        for ms in `echo $HIVE_HA_HIVESERVER2 | tr ',' '\n' | sort -u`
+        do
+            execute_and_print_order $ms "cd $HIVE_HOME/bin;nohup ./hive --service hiveserver2 > ../log/hiveserver2.out 2>&1 &"
+        done
+    else 
+        execute_and_print_order $hive_first_machine "cd $HIVE_HOME/bin;nohup ./hive --service metastore > ../log/metastore.out 2>&1 &"
+        execute_and_print_order $hive_first_machine "cd $HIVE_HOME/bin;nohup ./hive --service hiveserver2 > ../log/hiveserver2.out 2>&1 &"
+    fi
+    
+}
+
+function init_mysql() {
+    mysql -h$HIVE_MYSQL_HOSTNAME \
+        -P$HIVE_MYSQL_PORT \
+        -u$HIVE_MYSQL_USERNAME \
+        -p$HIVE_MYSQL_PASSWORD \
+        -sNe "drop database if exists $HIVE_MYSQL_DATABASE;create database $HIVE_MYSQL_DATABASE;select 'OK'"
+    execute_and_check_order $hive_first_machine "$HIVE_HOME/bin/schematool -dbType mysql -initSchema"
+    mysql -h$HIVE_MYSQL_HOSTNAME \
+        -P$HIVE_MYSQL_PORT \
+        -u$HIVE_MYSQL_USERNAME \
+        -p$HIVE_MYSQL_PASSWORD \
+        -D$HIVE_MYSQL_DATABASE \
+        -sNe "alter table COLUMNS_V2 modify column COMMENT varchar(256) character set utf8;\
+alter table TABLE_PARAMS modify column PARAM_VALUE varchar(4000) character set utf8;\
+alter table PARTITION_KEYS modify column PKEY_COMMENT varchar(4000) character set utf8;"
+        
 }
 
 if [ $# -eq 0 ]; then
@@ -339,6 +484,10 @@ case $1 in
     "hadoop")
         install_hadoop
         start_hadoop
+    ;;
+    "hive")
+        install_hive
+
     ;;
     *)
     echo -e "ERROR: args err\n\t USEAGE: $EXAMPLE"

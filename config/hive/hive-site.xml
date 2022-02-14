@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+
+<configuration> 
+  <property> 
+    <name>hive.exec.local.scratchdir</name>  
+    <value>{HIVE_HOME}/tmp/</value>  
+    <description>Local scratch space for Hive jobs</description> 
+  </property>
+  <property> 
+    <name>hive.downloaded.resources.dir</name>  
+    <value>{HIVE_HOME}/tmp/${hive.session.id}_resources</value>  
+    <description>Temporary local directory for added resources in the remote file system.</description> 
+  </property>  
+  <property> 
+    <name>javax.jdo.option.ConnectionUserName</name>  
+    <value>{HIVE_MYSQL_USERNAME}</value> 
+  </property>  
+  <property> 
+    <name>javax.jdo.option.ConnectionPassword</name>  
+    <value>{HIVE_MYSQL_PASSWORD}</value> 
+  </property>  
+  <property> 
+    <name>javax.jdo.option.ConnectionURL</name>  
+    <value>jdbc:mysql://{HIVE_MYSQL_HOSTNAME}:{HIVE_MYSQL_PORT}/{HIVE_MYSQL_DATABASE}?useSSL=false&amp;useUnicode=true&amp;characterEncoding=utf-8</value> 
+  </property>  
+  <property> 
+    <name>hive.metastore.uris</name>  
+    <value>{HIVE_METASTORE_URIS}</value>  
+    <description>Thrift URI for the remote metastore. Used by metastore client to connect to remote metastore.</description> 
+  </property>  
+  <property> 
+    <name>hive.metastore.schema.verification</name>  
+    <value>false</value> 
+  </property>  
+  <property> 
+    <name>javax.jdo.option.ConnectionDriverName</name>  
+    <value>com.mysql.jdbc.Driver</value> 
+  </property>  
+  <property> 
+    <name>hive.strict.checks.type.safety</name>  
+    <value>true</value>  
+    <description>严格模式</description> 
+  </property>  
+  <property> 
+    <name>hive.strict.checks.cartesian.product</name>  
+    <value>true</value>  
+    <description>不允许笛卡尔积</description> 
+  </property>  
+  <property> 
+    <name>hive.querylog.location</name>  
+    <value>{HIVE_HOME}/tmp/</value> 
+  </property>  
+  <property> 
+    <name>hive.auto.convert.join</name>  
+    <value>false</value>  
+    <description>小表自动mapjoin</description> 
+  </property>  
+  <property> 
+    <name>hive.driver.parallel.compilation</name>  
+    <value>true</value>  
+    <description/> 
+  </property>  
+  <property> 
+    <name>hive.server2.logging.operation.log.location</name>  
+    <value>{HIVE_HOME}/tmp/operation_logs</value> 
+  </property>  
+  <property> 
+    <name>hive.server2.thrift.port</name>  
+    <value>10000</value> 
+  </property>  
+  <property> 
+    <name>hive.support.quoted.identifiers</name>  
+    <value>none</value> 
+  </property>  
+  <property> 
+    <name>hive.exec.parallel</name>  
+    <value>true</value>  
+    <description>Whether to execute jobs in parallel</description> 
+  </property>  
+  <property> 
+    <name>hive.exec.reducers.max</name>  
+    <value>999</value> 
+  </property>  
+  <property> 
+    <name>hive.new.job.grouping.set.cardinality</name>  
+    <value>100000</value> 
+  </property>  
+  <property> 
+    <name>hive.cli.print.current.db</name>  
+    <value>true</value> 
+  </property>  
+  <!--hiveserver2 ha-->  
+  <property> 
+    <name>hive.server2.support.dynamic.service.discovery</name>  
+    <value>{HIVE_HA}</value> 
+  </property>  
+  <property> 
+    <name>hive.server2.zookeeper.namespace</name>  
+    <value>hiveserver2</value> 
+  </property>  
+  <property> 
+    <name>hive.zookeeper.quorum</name>  
+    <value>{HIVE_HA_ZK_ROOT}</value> 
+  </property>  
+  <property> 
+    <name>hive.server2.thrift.bind.host</name>  
+    <value>0.0.0.0</value>
+  </property> 
+  <!--执行权限-->
+  <property>
+     <name>hive.server2.thrift.client.user</name>
+     <value>{USER}</value>
+     <description>Username to use against thrift client</description>
+   </property>
+</configuration>
