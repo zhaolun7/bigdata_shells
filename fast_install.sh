@@ -308,7 +308,13 @@ function ssh_login_free_trust() {
     fi
     for dn in $ms
     do
-        execute_and_check_order $dn "echo '$idpub1' >> ~/.ssh/authorized_keys" true
+        execute_and_check_order $dn "
+        ssh_pub_key='$idpub1'
+        has_key=\$(grep -s \"\$ssh_pub_key\" ~/.ssh/authorized_keys | wc -l )
+        if [ \$has_key -eq 0 ];then 
+            echo \"\$ssh_pub_key\" >> ~/.ssh/authorized_keys
+        fi
+        " true
         execute_and_check_order $HDFS_NAMENODE "ssh -o PasswordAuthentication=no -o StrictHostKeyChecking=no $dn echo ok" true
     done
     if [ "x$HADOOP_HA" == "xtrue" ];then
@@ -321,7 +327,13 @@ function ssh_login_free_trust() {
         is_pub "$idpub2"
         for dn in $ms
         do
-            execute_and_check_order $dn "echo '$idpub2' >> ~/.ssh/authorized_keys" true
+            execute_and_check_order $dn "
+                ssh_pub_key='$idpub2'
+                has_key=\$(grep -s \"\$ssh_pub_key\" ~/.ssh/authorized_keys | wc -l )
+                if [ \$has_key -eq 0 ];then 
+                    echo \"\$ssh_pub_key\" >> ~/.ssh/authorized_keys
+                fi
+        " true
             execute_and_check_order $HDFS_HA_NAMENODE_2 "ssh -o PasswordAuthentication=no -o StrictHostKeyChecking=no $dn echo ok" true
         done
     fi
@@ -487,7 +499,9 @@ case $1 in
     ;;
     "hive")
         install_hive
-
+    ;;
+    "ssh_trust")
+        ssh_login_free_trust
     ;;
     *)
     echo -e "ERROR: args err\n\t USEAGE: $EXAMPLE"
