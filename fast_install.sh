@@ -52,6 +52,9 @@ function execute_and_check_order() {
 
 function source_config() { 
     source $SCRIPT_PATH/fast_install_config.sh
+    if [ "$YARN_RESOURCEMANAGER" == "localhost" ]; then 
+        YARN_RESOURCEMANAGER="0.0.0.0"
+    fi
 }
 
 function install_java() {
@@ -308,6 +311,7 @@ function start_hadoop() {
     LOG "start cluster"
     execute_and_check_order $HDFS_NAMENODE "$HADOOP_HOME/sbin/start-dfs.sh" true
     execute_and_check_order $HDFS_NAMENODE "$HADOOP_HOME/sbin/start-yarn.sh" true
+    execute_and_check_order $YARN_HA_RESOURCEMANAGER_2 "$HADOOP_HOME/sbin/yarn-daemon.sh start resourcemanager" true
 }
 
 
@@ -514,6 +518,7 @@ start_hiveserver2="
 }
 
 function init_mysql() {
+    hive_first_machine=`echo $HIVE_NODE | cut -d ',' -f1`
     execute_and_check_order $hive_first_machine "mysql -h$HIVE_MYSQL_HOSTNAME \
 -P$HIVE_MYSQL_PORT \
 -u$HIVE_MYSQL_USERNAME \
