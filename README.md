@@ -1,12 +1,12 @@
 # bigdata_shells
 
-### fast_install.sh
+## fast_install.sh
 
 A fast way for sql-boy to install hadoop cluster. 
 
 Supports single node and distributed cluster installations. Also supports high availability.
 
-#### Require:
+### Require:
 
 - CentOS 7
 - At least 4g memory, preferably 8g or larger
@@ -14,9 +14,9 @@ Supports single node and distributed cluster installations. Also supports high a
 - JDK8
 - Zookeeper (optional)
 
-#### Installation steps:
+### Installation steps:
 
-##### 1.ssh trust
+#### 1.ssh trust
 
 Establish ssh trust of the manage node to all nodes, for excample:
 
@@ -25,7 +25,7 @@ ssh-kegen
 ssh-copy-id localhost
 ```
 
-##### 2.modify `fast_install_config.sh` as you need.
+#### 2.modify `fast_install_config.sh` as you need.
 
 Modify mysql account password and other information.
 
@@ -33,7 +33,7 @@ If you want to install all components on a single machine, you only need to modi
 
 If you want to install a highly available cluster, you need to provide the zookeeper connection information
 
-##### 3.download file(optional)
+#### 3.download file(optional)
 
 Download the following files, you can choose the latest minor version under the same major version. and then put them in the same directory where the fast_install.sh script is located. If you don't want to download newer minor version manually, this scrips will download them automatically(Internet connection required).
 
@@ -43,9 +43,7 @@ Download the following files, you can choose the latest minor version under the 
 - [spark-2.4.8-bin-without-hadoop.tgz](https://archive.apache.org/dist/spark/spark-2.4.8/spark-2.4.8-bin-without-hadoop.tgz)
 - [mysql-connector-java-5.1.49.jar](https://repo1.maven.org/maven2/mysql/mysql-connector-java/5.1.49/mysql-connector-java-5.1.49.jar)
 
-##### 4.run script
-
-Put the above files in the same directory where the fast_install.sh script is located. then run
+#### 4.run script
 
 ```shell
 sh fast_install.sh hadoop
@@ -55,7 +53,7 @@ sh fast_install.sh spark
 
 Check whether the installation is successful at each step.
 
-##### 5.check service
+#### 5.check service
 
 hdfs: http://your-ip:50070/
 
