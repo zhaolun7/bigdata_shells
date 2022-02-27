@@ -4,8 +4,14 @@
 SCRIPT_PATH=$(cd `dirname $0`;pwd)
 cd $SCRIPT_PATH
 #echo "SCRIPT_PATH:$SCRIPT_PATH"
-EXAMPLE="sh $0 ds|ha"
+EXAMPLE="sh $0 hadoop|hive|spark"
 _DEBUG_MODE=false
+jdk_tgz_url='http://download.oracle.com/otn-pub/java/jdk/8u131-b11/d54c1d3a095b4ff2b6607d096fa80163/jdk-8u131-linux-x64.tar.gz'
+hadoop_tgz_url="https://archive.apache.org/dist/hadoop/common/hadoop-2.10.1/hadoop-2.10.1.tar.gz"
+hive_tgz_url="https://archive.apache.org/dist/hive/hive-2.3.9/apache-hive-2.3.9-bin.tar.gz"
+mysql_jar_url="https://repo1.maven.org/maven2/mysql/mysql-connector-java/5.1.49/mysql-connector-java-5.1.49.jar"
+spark_tgz_url="https://archive.apache.org/dist/spark/spark-2.4.8/spark-2.4.8-bin-without-hadoop.tgz"
+
 function LOG() {
     echo -e "[ `date +"%F %T"` ][ INFO | $* ]" | tee -a $SCRIPT_PATH/install.log 
 }
@@ -16,7 +22,14 @@ function LOG_ERROR() {
     echo -e "[ `date +"%F %T"` ][ ERROR | $* ]" | tee -a $SCRIPT_PATH/install.log
     #break
 }
-
+function try_wget() {
+    cd $SCRIPT_PATH
+    wget $1
+    if [ $? -ne 0 ];then
+        LOG_ERROR "download $1 failed, exit"
+        exit -1
+    fi
+}
 function is_empty() {
     if [ "x$1" == "x" ];then 
         LOG_ERROR "check name is empty"
@@ -65,7 +78,17 @@ function install_java() {
         LOG "(default) install java on hadoop machine"
     fi
     cd $SCRIPT_PATH
-    jdk_name=$(ls jdk-8u*-linux-x64.tar.gz | head -1)
+    jdk_name=$(ls jdk-8u*-linux-x64.tar.gz 2>/dev/null | head -1)
+    if [ "x$jdk_name" == "x" ];then
+        LOG wget -c --header "Cookie: oraclelicense=accept-securebackup-cookie" $jdk_tgz_url
+        wget -c --header "Cookie: oraclelicense=accept-securebackup-cookie" $jdk_tgz_url
+        if [ $? -ne 0 ]; then 
+            LOG_ERROR "download jdk failed"
+            rm -f jdk-8u*.tar.gz
+            exit -1
+        fi
+        jdk_name=$(basename $jdk_tgz_url)
+    fi
     if [ ! -f $jdk_name ];then 
         LOG_ERROR "file not find"
         exit -1
@@ -153,7 +176,11 @@ function install_hadoop() {
     ssh_login_free_trust
     hadoop_config
     cd $SCRIPT_PATH
-    hadoop_tgz=$(ls hadoop-2.*.tar.gz | head -1)
+    hadoop_tgz=$(ls hadoop-2.*.tar.gz 2>/dev/null | head -1)
+    if [ "x$hadoop_tgz" == "x" ];then 
+        try_wget $hadoop_tgz_url
+        hadoop_tgz=$(basename $hadoop_tgz_url)
+    fi
     if [ ! -f $hadoop_tgz ];then 
         LOG_ERROR "hadoop install file not find"
         exit -1
@@ -405,12 +432,20 @@ export PATH=\$PATH:\$HIVE_HOME/bin
 function install_hive() {
     hive_config
     cd $SCRIPT_PATH
-    hive_tgz=$(ls apache-hive-2.*-bin.tar.gz | head -1)
+    hive_tgz=$(ls apache-hive-2.*-bin.tar.gz 2>/dev/null | head -1)
+    if [ "x$hive_tgz" == "x" ];then 
+        try_wget $hive_tgz_url
+        hive_tgz=$(basename $hive_tgz_url)
+    fi
     if [ ! -f $hive_tgz ];then 
         LOG_ERROR "hadoop install file not find"
         exit -1
     fi
-    mysql_jar=$(ls mysql-connector-java-5.*.jar | head -1)
+    mysql_jar=$(ls mysql-connector-java-5.*.jar 2>/dev/null| head -1)
+    if [ "x$mysql_jar" == "x" ];then 
+        try_wget $mysql_jar_url
+        mysql_jar=$(basename $mysql_jar_url)
+    fi
     if [ ! -f $mysql_jar ];then 
         LOG_ERROR "mysql jar not find"
         exit -1
@@ -562,6 +597,10 @@ function install_spark() {
     LOG "==========START TO DEPLOY SPARK=========="
     LOG "==========UNZIP FILE=========="
     spark_tgz=$(ls spark-2.*-bin-without-hadoop.tgz | head -1)
+    if [ "x$spark_tgz" == "x" ];then
+        try_wget $spark_tgz_url
+        spark_tgz=$(basename $spark_tgz_url)
+    fi
     spark_dir=${spark_tgz%\.tgz}
     if [ ! -f $spark_tgz ];then 
         LOG_ERROR "hadoop install file not find"
