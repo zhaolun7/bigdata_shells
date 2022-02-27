@@ -1,6 +1,6 @@
 # bigdata_shells
 
-### fash_install.sh
+### fast_install.sh
 
 A fast way for sql-boy to install hadoop cluster. 
 
