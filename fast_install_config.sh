@@ -1,16 +1,13 @@
-INSTALL_PATH=/home/bigdata2
-JAVA_HOME=/home/rcp/java
+INSTALL_PATH=/home/bigdata
+JAVA_HOME=$INSTALL_PATH/java
 
-USER=`whoami`
-USER_HOME=`cd ~;pwd`
 #===================HADOOP====================
-
 HADOOP_HOME=$INSTALL_PATH/hadoop
 HDFS_REPLICATION=1
 HDFS_NAMENODE=CS-101
-#HDFS_DATANODE=CS-101,CS-102
 HDFS_DATANODE=CS-101
-HDFS_DATANODE_DATA_DIR=/data1/hadoop_data
+#HDFS_DATANODE=CS-101,CS-102
+HDFS_DATANODE_DATA_DIR=$INSTALL_PATH/data
 
 HDFS_NAMENODE_ODPS="-Xmx1024m -Xms1024m"
 
@@ -53,3 +50,7 @@ HIVE_HA_HIVESERVER2=CS-101,CS-102
 HIVE_HA_ZK_ROOT=CS-101:2181
 #====================SPARK=============================
 SPARK_HOME=$INSTALL_PATH/spark
+# spark will deploy on every hiveserver2 node
+#======================================================
+USER=`whoami`
+USER_HOME=`cd ~;pwd`

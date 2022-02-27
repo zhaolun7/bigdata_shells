@@ -31,5 +31,8 @@
       <name>dfs.datanode.fsdataset.volume.choosing.policy</name>  
       <value>org.apache.hadoop.hdfs.server.datanode.fsdataset.AvailableSpaceVolumeChoosingPolicy</value>  
     </property>
-
+    <property>
+        <name>dfs.datanode.max.transfer.threads</name>
+        <value>8192</value>
+    </property>
 </configuration>
